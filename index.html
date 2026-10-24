@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#12305a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>3D Highway Car Racing - Sami &amp; Zaid</title>
+<style>
+  :root { --ui: rgba(10,16,28,.72); --acc: #ffbe28; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; touch-action: none; }
+  html, body { margin: 0; height: 100%; overflow: hidden; font-family: "Segoe UI", Arial, sans-serif; color: #fff; }
+  body { background: linear-gradient(#2f6fb5 0%, #6fa8dc 38%, #bad3ea 50%, #bad3ea 100%); }
+  #gl, #fx { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #fx { pointer-events: none; image-rendering: auto; }
+  .hide { display: none !important; }
+  .panel { background: var(--ui); border: 1px solid rgba(255,255,255,.18); border-radius: 12px; backdrop-filter: blur(4px); }
+  #top { position: fixed; top: calc(8px + env(safe-area-inset-top)); left: 8px; right: 8px; display: flex; justify-content: space-between; pointer-events: none; }
+  .stat { padding: 6px 12px; min-width: 88px; text-align: center; }
+  .stat small { display: block; font-size: 10px; letter-spacing: 1.5px; color: #9fb0c8; }
+  .stat b { font-size: 22px; }
+  #gauge { position: fixed; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); width: 150px; height: 150px; pointer-events: none; }
+  #radar { position: fixed; left: 8px; top: 74px; width: 54px; height: 105px; border-radius: 6px; pointer-events: none; }
+  #toast { position: fixed; top: 24%; left: 0; right: 0; text-align: center; font-size: 28px; font-weight: 800; color: var(--acc); text-shadow: 0 2px 8px #000; opacity: 0; pointer-events: none; }
+  #toast.pop { animation: pop .9s ease-out; }
+  @keyframes pop { 0% { opacity: 0; transform: scale(.6); } 15% { opacity: 1; transform: scale(1.1); } 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(-20px); } }
+  #flash { position: fixed; inset: 0; background: #f33; opacity: 0; pointer-events: none; transition: opacity .3s; }
+  #menuBar { position: fixed; top: calc(62px + env(safe-area-inset-top)); right: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .mini { background: var(--ui); color: #fff; border: 1px solid rgba(255,255,255,.25); border-radius: 8px; padding: 7px 10px; font-size: 11px; font-weight: 700; letter-spacing: .5px; }
+  .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(5,10,20,.55); }
+  .card { padding: 22px 26px; max-width: 460px; width: 92%; text-align: center; }
+  h1 { margin: 0 0 4px; font-size: 30px; letter-spacing: 1px; } h1 span { color: var(--acc); }
+  .sub { color: #b8c6dc; font-size: 13px; margin-bottom: 14px; }
+  .big { background: var(--acc); color: #1a1a1a; border: 0; border-radius: 10px; padding: 13px 34px; font-size: 18px; font-weight: 800; margin-top: 12px; }
+  .help { font-size: 12px; color: #c6d2e6; line-height: 1.6; text-align: left; margin-top: 10px; }
+  .help kbd { background: #2b3a52; border-radius: 4px; padding: 1px 6px; }
+  #go table { margin: 10px auto 0; font-size: 15px; } #go td { padding: 3px 12px; text-align: left; } #go td:last-child { text-align: right; font-weight: 800; color: var(--acc); }
+  /* touch controls */
+  #touch { position: fixed; left: 0; right: 0; bottom: calc(10px + env(safe-area-inset-bottom)); display: none; justify-content: space-between; padding: 0 12px; pointer-events: none; }
+  body.touch #touch { display: flex; } body.touch #gauge { bottom: calc(176px + env(safe-area-inset-bottom)); width: 112px; height: 112px; }
+  .pad { display: flex; gap: 10px; pointer-events: auto; align-items: flex-end; }
+  .tb { width: 78px; height: 78px; border-radius: 50%; border: 2px solid rgba(255,255,255,.55); background: rgba(10,16,28,.55); color: #fff; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .tb.down { background: rgba(255,190,40,.75); color: #111; } .tb.gas { background: rgba(40,170,80,.55); } .tb.brk { background: rgba(200,50,50,.55); }
+  #gas-brake { flex-direction: column; } #gauge { z-index: 2; }
+  body.portrait .tb { width: 70px; height: 70px; } body.portrait .stat { min-width: 70px; } body.portrait .stat b { font-size: 18px; }
+  #viewName { position: fixed; bottom: 4px; left: 0; right: 0; text-align: center; font-size: 10px; color: #fff9; pointer-events: none; }
+  body.touch #viewName { display: none; }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<canvas id="fx" width="192" height="108"></canvas>
+<div id="flash"></div>
+
+<div id="top">
+  <div class="panel stat"><small>SCORE</small><b id="hudScore">0</b></div>
+  <div class="panel stat"><small>DISTANCE km</small><b id="hudDist">0.00</b></div>
+  <div class="panel stat"><small>BEST</small><b id="hudBest">0</b></div>
+</div>
+<canvas id="radar" width="54" height="105"></canvas>
+<canvas id="gauge" width="180" height="180"></canvas>
+<div id="toast"></div>
+<div id="menuBar">
+  <button class="mini" id="btnView">VIEW: CHASE</button>
+  <button class="mini" id="btnPause">PAUSE</button>
+  <button class="mini" id="btnMute">SOUND: ON</button>
+  <button class="mini" id="btnTime">TIME: AUTO</button>
+  <button class="mini" id="btnTilt">TILT: OFF</button>
+  <button class="mini" id="btnFull">FULLSCREEN</button>
+</div>
+<div id="viewName"></div>
+
+<div id="touch">
+  <div class="pad"><button class="tb" id="bLeft">&#9664;</button><button class="tb" id="bRight">&#9654;</button></div>
+  <div class="pad" id="gas-brake"><button class="tb gas" id="bGas">GAS</button><button class="tb brk" id="bBrake">BRAKE</button></div>
+</div>
+
+<div id="menu" class="overlay"><div class="panel card">
+  <h1>3D HIGHWAY <span>RACER</span></h1>
+  <div class="sub">Computer Graphics Project &middot; Sami (B25 &middot; R54139) &amp; Zaid (B29 &middot; R54231)</div>
+  <div class="help">
+    <b>Laptop:</b> <kbd>&larr;</kbd><kbd>&rarr;</kbd> steer &nbsp; <kbd>&uarr;</kbd> gas &nbsp; <kbd>&darr;</kbd>/<kbd>Space</kbd> brake &nbsp; <kbd>C</kbd> camera &nbsp; <kbd>P</kbd> pause<br>
+    <b>Phone:</b> the car accelerates by itself &ndash; use &#9664; &#9654; to steer, GAS for full speed, BRAKE to slow. Turn the phone sideways for the best view.<br>
+    Overtake traffic (+50), pass close (+100), avoid crashing!
+  </div>
+  <button class="big" id="btnStart">START RACE</button>
+</div></div>
+
+<div id="go" class="overlay hide"><div class="panel card">
+  <h1>GAME <span>OVER</span></h1>
+  <table><tr><td>Score</td><td id="goScore">0</td></tr><tr><td>Best</td><td id="goBest">0</td></tr><tr><td>Distance</td><td id="goDist">0</td></tr>
+  <tr><td>Overtakes</td><td id="goOver">0</td></tr><tr><td>Close calls</td><td id="goNear">0</td></tr></table>
+  <button class="big" id="btnRestart">RESTART</button>
+  <div class="sub" style="margin-top:8px">or press Enter / R</div>
+</div></div>
+<div id="pause" class="overlay hide"><div class="panel card"><h1>PAUSED</h1><div class="sub">Tap or press P to resume</div></div></div>
+
+<script id="pwa">if ((location.protocol === 'https:' || location.hostname === 'localhost') && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});</script>
+<script>if ('ontouchstart' in window || navigator.maxTouchPoints > 0) document.body.classList.add('touch');</script>
+<script src="lib/three.min.js"></script>
+<script src="js/cgmath.js"></script>
+<script src="js/raster.js"></script>
+<script src="js/bend.js"></script>
+<script src="js/sky.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/cars.js"></script>
+<script src="js/world.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
