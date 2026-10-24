@@ -1,0 +1,7 @@
+Web port, Chromium (Playwright), autopilot (?bot) simulated headless at 60 Hz. No JavaScript errors / page errors.
+EASY     FINISHED  score 6464  4/4 checkpoints  9 hits  damage 64%  109 s sim
+MEDIUM   WRECKED   score 1016  1/6 checkpoints  6 hits  damage 100%  55 s sim
+HARD     WRECKED   score 3391  4/7 checkpoints  5 hits  damage 100%  159 s sim
+EXTREME  WRECKED   score 4500  5/8 checkpoints  4 hits  damage 100%  197 s sim
+(The simple autopilot is a smoke test, not a skill benchmark: it drives into solid rocks that a human would avoid.)
+Phone viewport 390x780 with touch emulation: menu, race with touch buttons and learning mode render correctly.

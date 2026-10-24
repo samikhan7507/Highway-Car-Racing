@@ -1,0 +1,13 @@
+[math]
+[raster/clip]
+[gameplay simulation with autopilot]
+  diff     result      time   score     cp   hits  near   dmg avg km/h
+  EASY     FINISHED  118.7s    5788   4/4       8     0    92      97   (traffic 6, obstacles 2, walls 0)
+  MEDIUM   TIME UP   183.0s    4329   5/6       5     0    75      83   (traffic 1, obstacles 4, walls 2)
+  HARD     WRECKED   237.2s    5137   6/7       2     0   100      73   (traffic 0, obstacles 2, walls 7)
+  EXTREME  WRECKED   143.2s    2566   3/8       6     0   100      61   (traffic 0, obstacles 6, walls 2)
+  speed after 8s: straight 36.9 m/s, drifting toward edge 1.8 m/s (lat=9.7)
+  speed after 3s: nitro 55.6 m/s vs normal 27.8 m/s
+  speed after 6s: engine L5 50.2 vs L0 35.4 m/s
+
+35 checks, 0 failed

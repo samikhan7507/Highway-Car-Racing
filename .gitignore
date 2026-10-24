@@ -1,0 +1,5 @@
+build/
+turbo_racer
+selftest
+turbo_racer_save.txt
+*.ppm
